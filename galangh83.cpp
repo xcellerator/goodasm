@@ -1061,19 +1061,19 @@ GALangH83::GALangH83() {
         ->regname("exr");
 
     // LDM
-    // TODO: Should be "ldm.l @sp+, (er{n}-er{n+1})
+    // TODO: Should be "ldm.l @sp+, (er{n}-er{n+1})"
     insert(mnem("ldm.2", 4, "\x01\x10\x6d\x70", "\xff\xff\xff\xf8"))
         ->help("Push two sequential registers onto the stack, given the last: ldm.2 @sp+, er5")
         ->example("ldm.2 @sp+, er5")
         ->regh83_spindinc("\x00\x00\x00\x00")
         ->regh83_32("\x00\x00\x00\x07");
-    // TODO: Should be "ldm.l @sp+, (er{n}-er{n+2})
+    // TODO: Should be "ldm.l @sp+, (er{n}-er{n+2})"
     insert(mnem("ldm.3", 4, "\x01\x20\x6d\x70", "\xff\xff\xff\xf8"))
         ->help("Push three sequential registers onto the stack, given the last: ldm.3 @sp+, er4")
         ->example("ldm.3 @sp+, er4")
         ->regh83_spindinc("\x00\x00\x00\x00")
         ->regh83_32("\x00\x00\x00\x07");
-    // TODO: Should be "ldm.l @sp+, (er{n}-er{n+2})
+    // TODO: Should be "ldm.l @sp+, (er{n}-er{n+2})"
     insert(mnem("ldm.4", 4, "\x01\x30\x6d\x70", "\xff\xff\xff\xf8"))
         ->help("Push four sequential registers onto the stack, given the last: ldm.4 @sp+, er3")
         ->example("ldm.4 @sp+, er3")
@@ -1827,7 +1827,25 @@ GALangH83::GALangH83() {
         ->regname("exr")
         ->abs("\x00\x00\x00\x00\xff\xff\xff\xff");
 
-    // TODO: STM
+    // STM
+    // TODO: Should be "stm.l (er{n}-er{n+1}), @-sp"
+    insert(mnem("stm.2", 4, "\x01\x10\x6d\xf0", "\xff\xff\xff\xf8"))
+        ->help("Pop two sequential registers off the stack, given the last: stm.2 er5, @-sp")
+        ->example("stm.2 er5, @-sp")
+        ->regh83_32("\x00\x00\x00\x07")
+        ->regh83_spinddec("\x00\x00\x00\x00");
+    // TODO: Should be "stm.l (er{n}-er{n+2}), @-sp"
+    insert(mnem("stm.3", 4, "\x01\x20\x6d\xf0", "\xff\xff\xff\xf8"))
+        ->help("Pop three sequential registers off the stack, given the last: stm.3 er4, @-sp")
+        ->example("stm.3 er4, @-sp")
+        ->regh83_32("\x00\x00\x00\x07")
+        ->regh83_spinddec("\x00\x00\x00\x00");
+    // TODO: Should be "stm.l (er{n}-er{n+2}), @-sp"
+    insert(mnem("stm.4", 4, "\x01\x30\x6d\xf0", "\xff\xff\xff\xf8"))
+        ->help("Pop four sequential registers off the stack, given the last: stm.4 er3, @-sp")
+        ->example("stm.4 er3, @-sp")
+        ->regh83_32("\x00\x00\x00\x07")
+        ->regh83_spinddec("\x00\x00\x00\x00");
 
     // SUB
     insert(mnem("sub.b", 2, "\x18\x00", "\xff\x00"))
