@@ -19,12 +19,16 @@
 #define regh83_16ind(x) insert(new GAParameterH83Reg16((x), true))
 
 // H83 32-Bit Register.
-#define regh83_32(x) insert(new GAParameterH83Reg32((x), false, false, false))
-#define regh83_32ind(x) insert(new GAParameterH83Reg32((x), true, false, false))
+#define regh83_32(x) insert(new GAParameterH83Reg32((x), false, false, false, false))
+#define regh83_32ind(x) insert(new GAParameterH83Reg32((x), true, false, false, false))
 
 // H83 32-Bit Register Indirect Access with Post-Increment/Pre-Decremenent.
-#define regh83_32indinc(x) insert(new GAParameterH83Reg32((x), true, true, false))
-#define regh83_32inddec(x) insert(new GAParameterH83Reg32((x), true, false, true))
+#define regh83_32indinc(x) insert(new GAParameterH83Reg32((x), true, true, false, false))
+#define regh83_32inddec(x) insert(new GAParameterH83Reg32((x), true, false, true, false))
+
+// H83 SP Register Indirect Access with Post-Increment/Pre-Decremenent.
+#define regh83_spindinc(x) insert(new GAParameterH83Reg32((x), true, true, false, true))
+#define regh83_spinddec(x) insert(new GAParameterH83Reg32((x), true, false, true, true))
 
 /* This class represents the H83.
  *
@@ -44,7 +48,7 @@ GALangH83::GALangH83() {
             << "e0"<<  "e1"<<  "e2"<<  "e3"<<  "e4"<<  "e5"<<  "e6"<<  "e7"     // 16-bit
             << "r0h"<< "r1h"<< "r2h"<< "r3h"<< "r4h"<< "r5h"<< "r6h"<< "r7h"    // 8-bit
             << "r0l"<< "r1l"<< "r2l"<< "r3l"<< "r4l"<< "r5l"<< "r6l"<< "r7l"    // 8-bit
-            << "pc"<< "ccr"<< "exr"<< "mach"<< "macl";                          // Special
+            << "pc"<< "ccr"<< "exr"<< "mach"<< "macl"<< "sp";                   // Special
 
     // TODO: threshold
 
@@ -1056,7 +1060,25 @@ GALangH83::GALangH83() {
         ->abs("\x00\x00\x00\x00\xff\xff\xff\xff")
         ->regname("exr");
 
-    // TODO: LDM
+    // LDM
+    // TODO: Should be "ldm.l @sp+, (er{n}-er{n+1})
+    insert(mnem("ldm.2", 4, "\x01\x10\x6d\x70", "\xff\xff\xff\xf8"))
+        ->help("Push two sequential registers onto the stack, given the last: ldm.2 @sp+, er5")
+        ->example("ldm.2 @sp+, er5")
+        ->regh83_spindinc("\x00\x00\x00\x00")
+        ->regh83_32("\x00\x00\x00\x07");
+    // TODO: Should be "ldm.l @sp+, (er{n}-er{n+2})
+    insert(mnem("ldm.3", 4, "\x01\x20\x6d\x70", "\xff\xff\xff\xf8"))
+        ->help("Push three sequential registers onto the stack, given the last: ldm.3 @sp+, er4")
+        ->example("ldm.3 @sp+, er4")
+        ->regh83_spindinc("\x00\x00\x00\x00")
+        ->regh83_32("\x00\x00\x00\x07");
+    // TODO: Should be "ldm.l @sp+, (er{n}-er{n+2})
+    insert(mnem("ldm.4", 4, "\x01\x30\x6d\x70", "\xff\xff\xff\xf8"))
+        ->help("Push four sequential registers onto the stack, given the last: ldm.4 @sp+, er3")
+        ->example("ldm.4 @sp+, er3")
+        ->regh83_spindinc("\x00\x00\x00\x00")
+        ->regh83_32("\x00\x00\x00\x07");
 
     // LDMAC
     insert(mnem("ldmac", 2, "\x03\x20", "\xff\xf8"))
@@ -2020,8 +2042,9 @@ void GAParameterH83Reg16::encode(GALanguage *lang, uint64_t adr, QByteArray &byt
 }
 
 // H83 32-Bit Register Access Decoding.
-GAParameterH83Reg32::GAParameterH83Reg32(const char* mask, bool indirect, bool postinc, bool predec) {
+GAParameterH83Reg32::GAParameterH83Reg32(const char* mask, bool indirect, bool postinc, bool predec, bool sp) {
     setMask(mask);
+
     if (indirect)
         prefix = "@";
     // @ERs+
@@ -2032,12 +2055,18 @@ GAParameterH83Reg32::GAParameterH83Reg32(const char* mask, bool indirect, bool p
     // @-ERs
     if (predec)
         prefix = "@-";
+
+    if (sp)
+        this->sp = sp;
 }
 
 int GAParameterH83Reg32::match(GAParserOperand *op, int len) {
     if (op->prefix != this->prefix || op->suffix != this->suffix) {
         return 0;
     }
+
+    if (this->sp)
+        return 1;
 
     for ( int i = 0b000 ; i <= 0b111 ; i++ ) {
         if (op->value == regnames[i])
@@ -2048,10 +2077,16 @@ int GAParameterH83Reg32::match(GAParserOperand *op, int len) {
 }
 
 QString GAParameterH83Reg32::decode(GALanguage *lang, uint64_t adr, const char* bytes, int inslen) {
-    uint64_t p = rawdecode(lang, adr, bytes, inslen);
-    assert(p<8);    // Number of 32-bit registers: ER0-ER7.
+    QString rendering;
 
-    QString rendering = prefix + regnames[p] + suffix;
+    if (!this->sp) {
+        uint64_t p = rawdecode(lang, adr, bytes, inslen);
+        assert(p<8);    // Number of 32-bit registers: ER0-ER7.
+
+        rendering = prefix + regnames[p] + suffix;
+    } else {
+        rendering = prefix + regnames[8] + suffix;
+    }
 
     return rendering;
 }

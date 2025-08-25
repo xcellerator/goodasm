@@ -61,15 +61,16 @@ private:
 // H83 32-Bit Register Access Decoding.
 class GAParameterH83Reg32 : public GAParameter {
 public:
-    GAParameterH83Reg32(const char* mask, bool indirect = false, bool postinc = false, bool predec = false);
+    GAParameterH83Reg32(const char* mask, bool indirect = false, bool postinc = false, bool predec = false, bool sp = false);
     int match(GAParserOperand *op, int len) override;
 
     QString decode(GALanguage *lang, uint64_t adr, const char* bytes, int inslen) override;
     void encode(GALanguage *lang, uint64_t adr, QByteArray &bytes, GAParserOperand op, int inslen) override;
 private:
-    QString regnames[8] = {
-        "er0", "er1", "er2", "er3", "er4", "er5", "er6", "er7",
+    QString regnames[9] = {
+        "er0", "er1", "er2", "er3", "er4", "er5", "er6", "er7", "sp",
     };
+    bool sp;
 };
 
 #endif // GALANGSH83_H
